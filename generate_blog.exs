@@ -3,27 +3,27 @@ Mix.install([:mdex])
 IO.puts("Generating HTML Blog")
 
 posts_md_files = Path.wildcard("../blog/????-??-??-*.md") |> Enum.sort()
-posts_html_files = posts_md_files |> Enum.map(fn p -> Path.rootname(p) <> ".html" end)
 
-IO.inspect(posts_md_files, label: "posts_md_files")
-IO.inspect(posts_html_files, label: "posts_html_files")
+IO.puts("#{Enum.count(posts_md_files)} posts to process")
 
 if ! File.exists?("blog") do
   File.mkdir!("blog")
 end
 
-posts_titles = posts_md_files
+posts_meta = posts_md_files
 |> Enum.map(fn post_md_file ->
   IO.inspect(post_md_file, label: "processing")
-  
+
   mark_down = File.read!(post_md_file)
   md_doc = MDEx.parse_document!(mark_down)
   html_fragment = MDEx.to_html!(md_doc)
   title = md_doc |> Map.get(:nodes) |> List.first() |> Map.get(:nodes) |> List.first() |> Map.get(:literal)
+  publication_date = md_doc |> Map.get(:nodes) |> Enum.at(1) |> Map.get(:nodes) |> List.first() |> Map.get(:literal)
 
   IO.inspect(title, label: "title")
+  IO.inspect(publication_date, label: "publication_date")
 
-  post_html_file = "blog/" <> Path.rootname(post_md_file) <> ".html"
+  post_html_file = "blog/#{Path.rootname(post_md_file)}.html"
 
   html_header = """
 <!DOCTYPE html>
@@ -42,9 +42,9 @@ posts_titles = posts_md_files
 </body>
 </html>
 """
-  html = html_header <> html_fragment <> html_footer
-  File.write!(post_html_file, html)
-  title
+
+  File.write!(post_html_file, [html_header, html_fragment, html_footer])
+  { Path.basename(post_html_file), title, publication_date }
 end)
 
 File.cp!("style.css", "blog/style.css")
@@ -74,14 +74,10 @@ html_header = """
 </body>
 </html>
 """
-  posts_html = Enum.zip(posts_html_files, posts_titles)
-|> Enum.map(fn { post_html_file, post_title } ->
-  "<li><a href=\"#{post_html_file}\">#{post_title}</a></li>"
+  posts_html = posts_meta
+|> Enum.map(fn { post_html_file, post_title, publication_date } ->
+  "<li><a href=\"#{post_html_file}\">#{post_title}</a> (#{publication_date})</li>"
 end)
 |> Enum.join("\n")
 
-html = html_header <> posts_html <> html_footer
-File.write!("blog/index.html", html)
-
-
-
+File.write!("blog/index.html", [html_header, posts_html, html_footer])
