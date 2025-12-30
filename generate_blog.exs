@@ -67,7 +67,7 @@ defmodule BlogGenerator do
     <body>
     <div style="text-align: right">Index</div>
     <h1>Blog</h1>
-    <h5>Yet another blog, a.k.a. some of Sven Van Caekenberghe's writings.</h5>
+    <h5>Yet another blog, a.k.a. some of <a href="https://stfx.eu">Sven Van Caekenberghe</a>'s writings.</h5>
     <h3>2025</h3>
     <ul>
     """
