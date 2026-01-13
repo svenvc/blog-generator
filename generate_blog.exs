@@ -1,6 +1,13 @@
 Mix.install([:mdex])
 
 defmodule BlogGenerator do
+
+  @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sept Oct Nov Dec)
+
+  def format_date(%Date{} = date) do
+    "#{Enum.at(@months, date.month - 1)} #{date.day}, #{date.year}"
+  end
+
   def process_post(post_md_file) do
     IO.inspect(post_md_file, label: "processing")
 
@@ -21,9 +28,12 @@ defmodule BlogGenerator do
           node
       end)
 
-    html_fragment = MDEx.to_html!(md_doc)
+    publication_date = Path.basename(post_md_file) |> String.slice(0, 10) |> Date.from_iso8601!()
     title = md_doc |> Enum.at(2) |> Map.get(:literal)
-    publication_date = md_doc |> Enum.at(4) |> Map.get(:literal)
+    md_date = MDEx.parse_document!(format_date(publication_date))[1]
+    md_doc = md_doc.nodes |> List.insert_at(1, md_date) |> MDEx.Document.wrap
+
+    html_fragment = MDEx.to_html!(md_doc)
 
     IO.inspect(title, label: "title")
     IO.inspect(publication_date, label: "publication_date")
@@ -68,24 +78,39 @@ defmodule BlogGenerator do
     <div style="text-align: right">Index</div>
     <h1>Blog</h1>
     <h5>Yet another blog, a.k.a. some of <a href="https://stfx.eu">Sven Van Caekenberghe</a>'s writings.</h5>
-    <h3>2025</h3>
-    <ul>
     """
 
     html_footer = """
-    </ul>
     </body>
     </html>
     """
 
-    posts_html =
-      posts_meta
-      |> Enum.map(fn {post_html_file, post_title, publication_date} ->
-        "<li><a href=\"#{post_html_file}\">#{post_title}</a> (#{publication_date})</li>"
-      end)
-      |> Enum.join("\n")
+    year_groups = Enum.group_by(
+      posts_meta,
+      fn {_post_html_file, _post_title, publication_date} -> publication_date.year end
+    )
 
-    File.write!("blog/index.html", [html_header, posts_html, html_footer])
+    index_html = year_groups
+      |> Map.keys()
+      |> Enum.sort()
+      |> Enum.map(fn year ->
+        [
+          "<h3>#{year}</h3>\n<ul>\n",
+          Map.get(year_groups, year)
+          |> Enum.map(fn {post_html_file, post_title, publication_date} ->
+            "<li><a href=\"#{post_html_file}\">#{post_title}</a> (#{format_date(publication_date)})</li>\n"
+          end),
+          "</ul>\n"
+        ]
+      end)
+
+    # posts_html =
+    #   posts_meta
+    #   |> Enum.map(fn {post_html_file, post_title, publication_date} ->
+    #     "<li><a href=\"#{post_html_file}\">#{post_title}</a> (#{format_date(publication_date)})</li>\n"
+    #   end)
+
+    File.write!("blog/index.html", [html_header, index_html, html_footer])
   end
 
   def run do
