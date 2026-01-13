@@ -14,28 +14,34 @@ p {
   line-height: 1.35;
 }
 
-/* https://alistapart.com/article/axiomatic-css-and-lobotomized-owls/ */
-* + * {
-  margin-top: 1.2rem;
+li {
+  margin: 10px;
+  line-height: 1.30;
 }
 
 h1 {
   font-size: 60px;
+  margin-bottom: 1.2rem;
 }
 h2 {
   font-size: 48px;
+  margin-bottom: 1.2rem;
 }
 h3 {
   font-size: 36px;
+  margin-bottom: 1.2rem;
 }
 h4 {
   font-size: 30px;
+  margin-bottom: 1.2rem;
 }
 h5 {
   font-size: 24px;
+  margin-bottom: 1.2rem;
 }
 h6 {
   font-size: 21px;
+  margin-bottom: 1.2rem;
 }
 
 a {
