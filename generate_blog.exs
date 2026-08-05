@@ -1,8 +1,15 @@
-Mix.install([:mdex])
+Mix.install([:mdex, :lumis],
+  config: [mdex_native: [syntax_highlighter: :lumis]])
 
 defmodule BlogGenerator do
 
   @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sept Oct Nov Dec)
+
+  @options [
+    syntax_highlight: [
+      engine: :lumis,
+      opts: [formatter: {:html_inline, theme: "material_darker"}]]
+  ]
 
   def format_date(%Date{} = date) do
     "#{Enum.at(@months, date.month - 1)} #{date.day}, #{date.year}"
@@ -33,7 +40,7 @@ defmodule BlogGenerator do
     md_date = MDEx.parse_document!(format_date(publication_date))[1]
     md_doc = md_doc.nodes |> List.insert_at(1, md_date) |> MDEx.Document.wrap
 
-    html_fragment = MDEx.to_html!(md_doc)
+    html_fragment = MDEx.to_html!(md_doc, @options)
 
     IO.inspect(title, label: "title")
     IO.inspect(publication_date, label: "publication_date")
@@ -124,7 +131,9 @@ defmodule BlogGenerator do
 
     IO.puts("#{Enum.count(posts_md_files)} posts to process")
 
-    if !File.exists?("blog") do
+    if File.exists?("blog") do
+      Path.wildcard("blog/*") |> File.rm!()
+    else
       File.mkdir!("blog")
     end
 
